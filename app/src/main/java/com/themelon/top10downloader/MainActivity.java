@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +20,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
+
+    private TextView xmlTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+        xmlTextView = (TextView ) findViewById(R.id.xmlTextView);
+        DownloadData downloadData = new DownloadData();
+        downloadData.execute("http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topfreeapplications/limit=10/xml");
     }
 
     @Override
@@ -72,7 +78,15 @@ public class MainActivity extends AppCompatActivity {
 
             return mFileContents;
         }
-//Possible uses when Network shuts down, this stops app from crashing
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            Log.d("DownloadData", "Result was: " + result);
+            xmlTextView.setText(mFileContents);
+        }
+
+        //Possible uses when Network shuts down, this stops app from crashing
         private String downloadXMLFile(String urlPath) {
             StringBuilder tempBuffer = new StringBuilder();
             try {
@@ -89,12 +103,24 @@ public class MainActivity extends AppCompatActivity {
                 char[] inputBuffer = new char[500];
                 while(true) {
                     charRead = isr.read(inputBuffer);
+                    if(charRead <=0) {
+                        break;
+                    }
+                    tempBuffer.append(String.copyValueOf(inputBuffer, 0, charRead));
                 }
+
+                return tempBuffer.toString();
 
 //If there was an error, DownloadData: logs the error, IO Exception reading data: Displays error, e.getMessage: gives detail of what error was.
             } catch(IOException e) {
                 Log.d("DownloadData", "IO Exception reading data: " + e.getMessage());
+                e.printStackTrace();
+            } catch(SecurityException e) {
+                Log.d("DownloadData", "Security exception. Needs permissions? " + e.getMessage());
+
             }
+
+            return null;
         }
     }
 
